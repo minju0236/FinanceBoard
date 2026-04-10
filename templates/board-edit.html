@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>게시글 수정</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f2f4f6;
+            font-family: Arial, sans-serif;
+            color: #191f28;
+        }
+
+        .page {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 48px 20px 80px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .sub-text {
+            margin: 0 0 32px;
+            font-size: 15px;
+            color: #8b95a1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #4e5968;
+        }
+
+        input,
+        textarea,
+        #tradeSelect {
+            width: 100%;
+            border: 1px solid #e5e8eb;
+            border-radius: 16px;
+            padding: 16px 18px;
+            font-size: 15px;
+            outline: none;
+            font-family: Arial, sans-serif;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #3182f6;
+            box-shadow: 0 0 0 4px rgba(49, 130, 246, 0.12);
+        }
+
+        textarea {
+            min-height: 240px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .btn,
+        .btn-secondary {
+            flex: 1;
+            padding: 16px 20px;
+            border-radius: 16px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn {
+            background: #3182f6;
+            color: #ffffff;
+        }
+
+        .btn:hover {
+            background: #1b64da;
+        }
+
+        .btn-secondary {
+            background: #f2f4f6;
+            color: #4e5968;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e8eb;
+        }
+
+        .trade-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .trade-badge.buy {
+            background: #ffe2e5;
+            color: #d92d20;
+        }
+
+        .trade-badge.sell {
+            background: #e7f0ff;
+            color: #1f6feb;
+        }
+
+        #tradeSelect {
+            border-radius: 8px;
+            border: 1px solid #ddd;
+
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+
+            background: white url("data:image/svg+xml;utf8,<svg fill='black' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>") no-repeat right 10px center;
+            background-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout">
+        <header class="header">
+            <div class="logo">FinanceBoard</div>
+            <div class="header-right">
+                <span id="serverTime">데이터 수신 준비중</span>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <h2>거래 메뉴</h2>
+            <ul class="gnb-menu">
+                <li><button class="gnb-button" onclick="location.href='/dashboard'">주식 거래</button></li>
+            </ul>
+
+            <h2 style="margin-top:20px;">게시판</h2>
+            <ul class="gnb-menu">
+                <li><button class="gnb-button" onclick="location.href='/board/list'">글 목록</button></li>
+                <li><button class="gnb-button" onclick="location.href='/board/write'">글 작성</button></li>
+            </ul>
+        </aside>
+
+        <main class="main">
+            <div class="page">
+                <div class="card">
+                    <h1>게시글 수정</h1>
+                    <p class="sub-text">기존 게시글 내용을 수정할 수 있습니다.</p>
+
+                    <form onsubmit="submitEdit(event)">
+                        <div class="form-group">
+                            <label for="title">제목</label>
+                            <input type="text" id="title" name="title" value="{{title}}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tradeSelect">거래 선택</label>
+                            <select id="tradeSelect" name="trade_id">
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="writer">작성자</label>
+                            <input type="text" id="writer" name="writer" value="{{writer}}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="content">내용</label>
+                            <textarea id="content" name="content" required>{{content}}</textarea>
+                        </div>
+
+                        <div class="button-row">
+                            <button class="btn" type="submit">수정 완료</button>
+                            <a class="btn-secondary" href="/board/detail/{{board_id}}">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function getAuthHeader() {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                alert('로그인 필요');
+                location.href = '/login';
+                return null;
+            }
+
+            return {
+                'Authorization': 'Bearer ' + token
+            };
+        }
+
+        async function loadTrades() {
+            const headers = getAuthHeader();
+            if (!headers) return;
+
+            const res = await fetch('/api/trades/me', { headers });
+            const data = await res.json();
+
+            const select = document.getElementById('tradeSelect');
+            select.innerHTML = '';
+
+            if (data.success) {
+                data.rows.forEach(trade => {
+                    const option = document.createElement('option');
+
+                    option.value = trade.id;
+                    option.textContent =
+                        `[${trade.type}] ${trade.price}원 (${trade.created_at})`;
+
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        async function submitEdit(e) {
+            e.preventDefault();
+
+            const token = localStorage.getItem('token');
+
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const writer = document.getElementById('writer').value;
+            const trade_id = document.getElementById('tradeSelect').value;
+
+            const boardId = "{{board_id}}";
+
+            const res = await fetch('/board/edit/' + boardId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ title, content, writer, trade_id })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                alert('수정 완료');
+
+                fetch('/board/detail/' + boardId, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                    .then(res => res.text())
+                    .then(html => {
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    });
+
+            } else {
+                alert(data.message || '실패');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadTrades();
+        });
+    </script>
+</body>
+
+</html>

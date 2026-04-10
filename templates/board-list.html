@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>게시판 목록</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f2f4f6;
+            font-family: Arial, sans-serif;
+            color: #191f28;
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 48px 20px 80px;
+        }
+
+        .main-header {
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 34px;
+            font-weight: 700;
+        }
+
+        .sub-text {
+            margin: 0;
+            color: #8b95a1;
+            font-size: 15px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .write-btn {
+            display: inline-block;
+            padding: 14px 18px;
+            border-radius: 14px;
+            background: #3182f6;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .write-btn:hover {
+            background: #1b64da;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: #f9fafb;
+            color: #6b7684;
+            padding: 16px 14px;
+            border-bottom: 1px solid #f2f4f6;
+            font-size: 14px;
+        }
+
+        tbody td {
+            padding: 16px 14px;
+            border-bottom: 1px solid #f2f4f6;
+            text-align: center;
+            font-size: 14px;
+            color: #333d4b;
+        }
+
+        .title-cell {
+            text-align: left;
+        }
+
+        .title-cell a {
+            color: #191f28;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .title-cell a:hover {
+            color: #3182f6;
+        }
+
+        .action-link {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .view-link {
+            background: #eef6ff;
+            color: #3182f6;
+        }
+
+        .edit-link {
+            background: #f2f4f6;
+            color: #4e5968;
+        }
+
+        .delete-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 10px;
+            background: #ffe2e5;
+            color: #d92d20;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .delete-btn:hover {
+            background: #ffd3d8;
+        }
+
+        .empty-box {
+            padding: 48px 20px;
+            text-align: center;
+            color: #8b95a1;
+            font-size: 15px;
+        }
+
+        .inline-form {
+            margin: 0;
+        }
+
+        /* 기본 hover */
+        tbody tr:hover {
+            background: #efefef;
+            transition: 0.2s;
+        }
+
+        .title-cell {
+            font-weight: 700;
+        }
+
+        /* BUY → 연한 빨강 */
+        .row-buy {
+            background: #fff5f5;
+        }
+
+        /* SELL → 연한 파랑 */
+        .row-sell {
+            background: #f0f6ff;
+        }
+
+        /* 거래 컬럼 강조 */
+        .trade-cell {
+            font-weight: bold;
+        }
+
+        /* 거래 텍스트 색 */
+        .row-buy .trade-cell {
+            color: #d92d20;
+        }
+
+        .row-sell .trade-cell {
+            color: #1f6feb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout">
+        <header class="header">
+            <div class="logo">FinanceBoard</div>
+            <div class="header-right">
+                <span id="serverTime">데이터 수신 준비중</span>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <h2>거래 메뉴</h2>
+            <ul class="gnb-menu">
+                <li><button class="gnb-button" onclick="location.href='/dashboard'">주식 거래</button></li>
+            </ul>
+
+            <h2 style="margin-top:20px;">게시판</h2>
+            <ul class="gnb-menu">
+                <li><button class="gnb-button" onclick="location.href='/board/list'">글 목록</button></li>
+                <li><button class="gnb-button" onclick="location.href='/board/write'">글 작성</button></li>
+            </ul>
+        </aside>
+
+        <main class="main">
+            <div class="page">
+                <div class="main-header">
+                    <h1>게시판</h1>
+                    <p class="sub-text">등록된 게시글을 확인하고 새 글을 작성할 수 있습니다.</p>
+                </div>
+
+                <div class="card">
+                    <div class="toolbar">
+                        <a class="write-btn" href="/board/write">글쓰기</a>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>제목</th>
+                                <th>작성자</th>
+                                <th>거래</th>
+                                <th>작성일</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{table_section}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function goDetail(id) {
+            const token = localStorage.getItem('token');
+
+            fetch('/board/detail/' + id, {
+                headers: token ? {
+                    'Authorization': 'Bearer ' + token
+                } : {}
+            })
+                .then(res => res.text())
+                .then(html => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                });
+        }
+    </script>
+</body>
+
+</html>

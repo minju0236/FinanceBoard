@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>FinanceBoard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="layout">
+        <header class="header">
+            <div class="logo">FinanceBoard</div>
+            <div class="header-right">
+                <span id="serverTime">데이터 수신 준비중</span>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <h2>거래 메뉴</h2>
+            <ul class="gnb-menu">
+                <li><button class="gnb-button" onclick="location.href='/dashboard'">주식 거래</button></li>
+            </ul>
+
+            <h2 style="margin-top:20px;">게시판</h2>
+            <ul class="gnb-menu">
+                <li><button class="gnb-button" onclick="location.href='/board/list'">글 목록</button></li>
+                <li><button class="gnb-button" onclick="location.href='/board/write'">글 작성</button></li>
+            </ul>
+        </aside>
+
+        <main class="main">
+            <section class="card-grid">
+                <div class="card summary-card">
+                    <div class="card-title">현재 가격</div>
+                    <div class="card-value" id="latestPrice">0</div>
+                </div>
+
+                <div class="card summary-card">
+                    <div class="card-title">가격 변동</div>
+                    <div class="card-value" id="changePrice">0</div>
+                </div>
+
+                <div class="card summary-card">
+                    <div class="card-title">현재 거래량</div>
+                    <div class="card-value" id="latestVolume">0</div>
+                </div>
+
+                <div class="card summary-card">
+                    <div class="card-title">체결 강도</div>
+                    <div class="card-value" id="tradeStrength">0</div>
+                </div>
+            </section>
+
+            <section class="content-grid">
+                <div class="card chart-card wide-card">
+                    <div class="card-title">5초 단위 주식 흐름</div>
+                    <canvas id="secChart"></canvas>
+                </div>
+
+                <div class="card stats-card">
+                    <div class="card-title">오늘 요약</div>
+                    <div class="stats-box">
+                        <div class="stats-row"><span>오늘 평균가</span><strong id="avgPriceDay">0</strong></div>
+                        <div class="stats-row"><span>오늘 최고가</span><strong id="maxPriceDay">0</strong></div>
+                        <div class="stats-row"><span>오늘 최저가</span><strong id="minPriceDay">0</strong></div>
+                        <div class="stats-row"><span>총 거래량</span><strong id="totalVolumeDay">0</strong></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="content-grid">
+                <div class="card">
+                    <div class="card-title">주식 매수 / 매도</div>
+
+                    <!-- 공통 정보 -->
+                    <div class="trade-summary">
+                        <div class="summary-item">
+                            <div class="label">보유금</div>
+                            <div class="value">
+                                <span id="userBalance">0</span>원
+                            </div>
+                        </div>
+
+                        <div class="summary-item">
+                            <div class="label">보유 주식</div>
+                            <div class="value">
+                                <span id="userStock">0</span>주
+                                (<span id="stockValue">0원</span>)
+                            </div>
+                        </div>
+
+                        <div class="summary-item">
+                            <div class="label">손익</div>
+                            <div class="value" id="profitRate">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- 탭 -->
+                    <div class="trade-tabs">
+                        <button id="buyTab" class="tab active" onclick="switchTab('buy')">매수</button>
+                        <button id="sellTab" class="tab" onclick="switchTab('sell')">매도</button>
+                    </div>
+
+                    <!-- 매수 영역 -->
+                    <div id="buySection" class="trade-section">
+                        <div class="max-info">
+                            최대 매수: <strong id="maxBuy">0</strong> 주
+                        </div>
+
+                        <div class="btn-row">
+                            <input id="buyQuantity" type="number" placeholder="수량 입력">
+                            <button onclick="setQuantity(1, 'buy')">1</button>
+                            <button onclick="setQuantity(5, 'buy')">5</button>
+                            <button onclick="setQuantity(10, 'buy')">10</button>
+                            <button onclick="setMaxBuy()" class="max-btn">최대</button>
+                            <button onclick="resetQuantity('buy')" class="reset-btn">리셋</button>
+                        </div>
+
+                        <button type="button" class="buy-btn" onclick="buyStock()">매수</button>
+                    </div>
+
+                    <!-- 매도 영역 -->
+                    <div id="sellSection" class="trade-section" style="display:none;">
+                        <div class="max-info">
+                            최대 매도: <strong id="maxSell">0</strong> 주
+                        </div>
+
+                        <div class="btn-row">
+                            <input id="sellQuantity" type="number" placeholder="수량 입력">
+                            <button onclick="setQuantity(1, 'sell')">1</button>
+                            <button onclick="setQuantity(5, 'sell')">5</button>
+                            <button onclick="setQuantity(10, 'sell')">10</button>
+                            <button onclick="setMaxSell()" class="max-btn">최대</button>
+                            <button onclick="resetQuantity('sell')" class="reset-btn">리셋</button>
+                        </div>
+
+                        <button type="button" class="sell-btn" onclick="sellStock()">매도</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function getAuthHeader() {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                alert('로그인 필요');
+                location.href = '/login';
+                return null;
+            }
+
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            };
+        }
+
+        async function loadUserInfo() {
+            const headers = getAuthHeader();
+            if (!headers) return;
+
+            const res = await fetch('/api/user/me', { headers });
+            const data = await res.json();
+
+            if (data.success) {
+                const stock = data.data.stock || 0;
+
+                document.getElementById('userBalance').textContent =
+                    numberFormat(data.data.balance || 0);
+
+                document.getElementById('userStock').textContent = stock;
+                document.getElementById('maxSell').textContent = stock;
+
+                const stockValue = stock * currentPrice;
+                document.getElementById('stockValue').textContent =
+                    numberFormat(stockValue) + '원';
+            }
+        }
+
+        async function buyStock() {
+            const headers = getAuthHeader();
+            if (!headers) return;
+
+            const inputEl = document.getElementById('buyQuantity');
+            const input = inputEl.value.trim();
+
+            if (input === '') {
+                alert('수량 입력하세요');
+                inputEl.focus();
+                return;
+            }
+
+            const quantity = parseInt(input, 10);
+
+            if (!Number.isInteger(quantity) || quantity <= 0) {
+                alert('수량 이상');
+                inputEl.focus();
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/trade/buy', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ quantity })
+                });
+
+                if (!res.ok) {
+                    alert('서버 에러');
+                    return;
+                }
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert('매수 완료');
+                    inputEl.value = '';
+                    await loadUserInfo();
+                    updateMaxBuy();
+                } else {
+                    alert(data.message || '실패');
+                }
+
+            } catch (e) {
+                console.error(e);
+                alert('요청 실패');
+            }
+        }
+        
+        async function sellStock() {
+            const headers = getAuthHeader();
+            if (!headers) return;
+
+            const quantity = Number(document.getElementById('sellQuantity').value);
+            const stock = Number(document.getElementById('userStock').textContent);
+
+            if (!quantity || quantity <= 0) {
+                alert('수량을 입력하세요');
+                return;
+            }
+
+            if (quantity > stock) {
+                alert('보유 주식 부족');
+                return;
+            }
+
+            const res = await fetch('/api/trade/sell', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ quantity })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                alert('매도 완료');
+                await loadUserInfo();
+                updateMaxBuy();
+            } else {
+                alert(data.message || '실패');
+            }
+        }
+
+        async function loadProfit() {
+            const headers = getAuthHeader();
+            if (!headers) return;
+
+            const res = await fetch('/api/user/profit', { headers });
+            const data = await res.json();
+
+            if (data.success) {
+                const rate = Number(data.profitRate);
+                const el = document.getElementById('profitRate');
+
+                el.textContent = (rate > 0 ? '+' : '') + rate + '%';
+
+                if (rate > 0) {
+                    el.style.color = '#e74c3c';
+                } else if (rate < 0) {
+                    el.style.color = '#1f6feb';
+                } else {
+                    el.style.color = '#888';
+                }
+            }
+        }
+
+        function switchTab(type) {
+            document.getElementById('buySection').style.display =
+                type === 'buy' ? 'block' : 'none';
+
+            document.getElementById('sellSection').style.display =
+                type === 'sell' ? 'block' : 'none';
+
+            document.getElementById('buyTab').classList.toggle('active', type === 'buy');
+            document.getElementById('sellTab').classList.toggle('active', type === 'sell');
+        }
+
+        function setMaxBuy() {
+            const max = Number(document.getElementById('maxBuy').textContent);
+            document.getElementById('buyQuantity').value = max;
+        }
+
+        function setMaxSell() {
+            const stock = Number(document.getElementById('userStock').textContent);
+            document.getElementById('sellQuantity').value = stock;
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                alert('로그인 필요');
+                location.href = '/login';
+                return;
+            }
+
+            await loadUserInfo();
+            await loadProfit();
+        });
+    </script>
+    <script src="/static/js/chart.js"></script>
+</body>
+
+</html>

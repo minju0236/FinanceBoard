@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>게시글 상세보기</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f2f4f6;
+            font-family: Arial, sans-serif;
+            color: #191f28;
+        }
+
+        .page {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 48px 20px 80px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        h1 {
+            margin: 0 0 24px;
+            font-size: 30px;
+            line-height: 1.4;
+        }
+
+        .meta-box {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+            padding: 18px 20px;
+            background: #f9fafb;
+            border-radius: 16px;
+        }
+
+        .meta-item {
+            font-size: 14px;
+            color: #4e5968;
+        }
+
+        .meta-item strong {
+            color: #191f28;
+            margin-right: 8px;
+        }
+
+        .content-box {
+            font-family: Arial, sans-serif;
+            min-height: 240px;
+            padding: 24px;
+            border: 1px solid #f2f4f6;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            color: #333d4b;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .btn,
+        .btn-secondary,
+        .btn-danger {
+            flex: 1;
+            padding: 15px 18px;
+            border-radius: 16px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn {
+            background: #3182f6;
+            color: #ffffff;
+        }
+
+        .btn:hover {
+            background: #1b64da;
+        }
+
+        .btn-secondary {
+            background: #f2f4f6;
+            color: #4e5968;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e8eb;
+        }
+
+        .btn-danger {
+            background: #f04452;
+            color: #ffffff;
+        }
+
+        .btn-danger:hover {
+            background: #d92d20;
+        }
+
+        form {
+            flex: 1;
+            margin: 0;
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="layout">
+        <header class="header">
+            <div class="logo">FinanceBoard</div>
+            <div class="header-right">
+                <span id="serverTime">데이터 수신 준비중</span>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <h2>거래 메뉴</h2>
+            <ul class="gnb-menu">
+                <li><button class="gnb-button" onclick="location.href='/dashboard'">주식 거래</button></li>
+            </ul>
+
+            <h2 style="margin-top:20px;">게시판</h2>
+            <ul class="gnb-menu">
+                <li><button class="gnb-button" onclick="location.href='/board/list'">글 목록</button></li>
+                <li><button class="gnb-button" onclick="location.href='/board/write'">글 작성</button></li>
+            </ul>
+        </aside>
+
+        <main class="main">
+            <div class="page">
+                <div class="card">
+                    <h1>{{title}}</h1>
+
+                    <div class="meta-box">
+                        <div class="meta-item"><strong>번호</strong>{{board_id}}</div>
+                        <div class="meta-item"><strong>작성자</strong>{{writer}}</div>
+                        <div class="meta-item"><strong>작성일</strong>{{created_at}}</div>
+                    </div>
+
+                    <div class="content-box">{{content}}</div>
+
+                    <div class="button-row">
+                        <a class="btn-secondary" href="/board/list">목록</a>
+
+                        {{edit_buttons}}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        function goDetail(id) {
+            const token = localStorage.getItem('token');
+
+            fetch('/board/detail/' + id, {
+                headers: token ? {
+                    'Authorization': 'Bearer ' + token
+                } : {}
+            })
+                .then(res => res.text())
+                .then(html => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                })
+                .catch(err => {
+                    console.error('detail error:', err);
+                    alert('페이지 이동 실패');
+                });
+        }
+
+        function goEdit(id) {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                alert('로그인이 필요합니다');
+                return;
+            }
+
+            fetch('/board/edit/' + id, {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error('권한 없음');
+                    return res.text();
+                })
+                .then(html => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                })
+                .catch(err => {
+                    console.error('edit error:', err);
+                    alert('수정 권한이 없습니다');
+                });
+        }
+
+        async function deletePost(id) {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                alert('로그인이 필요합니다');
+                return;
+            }
+
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+
+            try {
+                const res = await fetch('/board/delete/' + id, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    location.href = '/board/list';
+                } else {
+                    alert(data.message || '삭제 실패');
+                }
+            } catch (err) {
+                console.error('delete error:', err);
+                alert('삭제 중 오류 발생');
+            }
+        }
+    </script>
+</body>
+
+</html>

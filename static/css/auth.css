@@ -1,0 +1,39 @@
+.container {
+  background: white;
+  padding: 10px 30px 30px 30px;
+  border-radius: 12px;
+  width: 400px;
+  margin: 100px auto;
+}
+
+input {
+  width: 100%;
+  padding: 15px;
+  margin: 5px 0;
+  border: none;
+  border-radius: 5px;
+  background-color: #f4f6f8;
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  background: #3182f6;
+  border: none;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.container div {
+  font-size: 14px;
+  margin-top: 20px;
+  color: rgb(76, 76, 76);
+  text-align: center;
+}
+
+a {
+  margin-top: 10px;
+  color: #aaa;
+}
