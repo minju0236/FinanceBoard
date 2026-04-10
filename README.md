@@ -1,6 +1,12 @@
 # 📈 주식 모의 투자 & 커뮤니티 웹 서비스 (CRUD)
 
 ## 1. 프로젝트 개요
+
+### 배포 주소
+https://single-awesome-construct-consensus.trycloudflare.com/
+
+<img width="1915" height="1017" alt="스크린샷 2026-04-10 224106" src="https://github.com/user-attachments/assets/c8573a0a-0314-4b09-bc40-ba66ddfe36aa" />
+
 - **수행 주제**: JWT 기반 인증이 포함된 모의 주식 투자 및 게시판 웹 서비스
 - **배포 주소**: (Cloudflare 연결 URL 입력)
 - **사용 기술**
